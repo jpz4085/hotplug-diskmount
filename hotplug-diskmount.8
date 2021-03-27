@@ -1,0 +1,198 @@
+.\"
+.\" Updated by jpz4085
+.\" Written by Alexey Vatchenko <av@bsdua.org>.
+.\" Public domain.
+.\"
+.Dd March 25, 2021
+.Dt HOTPLUG-DISKMOUNT 8
+.Os
+.Sh NAME
+.Nm hotplug-diskmount
+.Nd disk automounter for hotplugd and toad
+.Sh SYNOPSIS
+.Nm
+.Op Fl d Ar dir
+.Cm attach
+.Op Fl f Ar never | dirty
+.Op Fl F
+.Op Fl g Ar group
+.Op Fl m Ar mode
+.Op Fl r Ar all | dirty
+.Op Fl u Ar user
+.Ar device
+.Nm
+.Op Fl d Ar dir
+.Cm init
+.Nm
+.Op Fl d Ar dir
+.Cm cleanup
+.Ar device
+.Sh DESCRIPTION
+The
+.Nm
+utility can be started by
+.Xr hotplugd 8
+from an
+.Pa attach
+script for the disk drive (2) device class, or by
+.Xr toad 8
+and terminates when
+.Ar device
+is detached.
+It mounts all supported partitions the disk contains.
+.Nm
+polls attached devices for media insertion or removal every 2 seconds.
+It is useful to
+detect and mount correctly disks inserted into card-readers and CD/DVD drives.
+.Pp
+By default all mount points are created in the
+.Pa /media
+directory, which should have been created beforehand by the
+.Cm init
+command.
+The default directory can be changed with the
+.Fl d
+option.
+.Pp
+The following commands and options are supported:
+.Bl -tag -width Ds
+.It Cm attach
+Instruct
+.Nm
+to create a mount point for
+.Ar device
+and mount it there.
+.Bl -tag -width Ds
+.It Fl f Ar never | dirty
+If
+.Ar never
+is specified
+.Nm
+doesn't run
+.Xr fsck 8
+on a file system.
+If
+.Ar dirty
+is specified
+.Nm
+runs
+.Xr fsck 8
+only if a file system is dirty.
+By default,
+.Nm
+always runs
+.Xr fsck 8
+before mounting a file system.
+.It Fl F
+Disable FUSE for non-standard file systems. Currently NTFS and EXFAT are supported.
+.It Fl g Ar group
+Set mount point group to
+.Ar group .
+The default group is
+.Dq wheel .
+.It Fl m Ar mode
+Set mount point permissions to
+.Ar mode .
+The default permissions are
+.Dq 0755 .
+.It Fl r Ar all | dirty
+If
+.Ar all
+is specified
+.Nm
+mounts all file systems readonly.
+If
+.Ar dirty
+is specified
+.Nm
+mounts readonly dirty file systems only.
+By default,
+.Nm
+mounts all file systems read-write.
+.It Fl u Ar user
+Set mount point owner to
+.Ar user .
+The default user is
+.Dq root .
+.El
+.Pp
+Options
+.Fl u,
+.Fl g
+and
+.Fl m
+are useful for the MSDOS file system.
+.Pp
+If
+.Xr fsck 8
+is not disabled, it is started in preen mode with the
+.Dq yes
+option.
+.It Cm init
+Creates directory set for storing mount points and sets permissions on directories.
+.It Cm cleanup
+Instruct
+.Nm
+to remove mount points for the
+.Ar device .
+This is necessary if
+.Nm
+is terminated incorrectly.
+.El
+.Sh FILES
+.Bl -tag -width "/dev/hotplug/attach" -compact
+.It Pa /etc/hotplug/attach
+Script to execute on device attachment.
+.El
+.Sh SIGNALS
+.Bl -tag -width "SIGTERM"
+.It Dv SIGTERM
+causes
+.Nm
+to unmount file system before removing the mount point.
+It's useful when
+.Nm
+is killed during system shutdown.
+.Nm
+never does force unmount.
+.El
+.Sh EXAMPLES
+Create directory set which will be used for storing mount points:
+.Bd -literal -offset indent
+/usr/local/libexec/hotplug-diskmount init
+.Ed
+.Pp
+Sample
+.Pa attach
+script:
+.Bd -literal -offset indent
+#!/bin/sh
+
+DEVCLASS=$1
+DEVNAME=$2
+
+case $DEVCLASS in
+2)
+	/usr/local/libexec/hotplug-diskmount attach "$DEVNAME"
+	;;
+esac
+.Ed
+.Sh SEE ALSO
+.Xr mount 8 ,
+.Xr fsck 8 ,
+.Xr hotplugd 8 ,
+.Xr toad 8
+.Sh AUTHORS
+.Nm
+was written by
+.An Alexey Vatchenko Aq Mt av@bsdua.org .
+.Sh BUGS
+If the user is fast enough it is possible that
+.Nm
+will not detect media changing in a card-reader or CD/DVD drive.
+Also
+.Nm
+being activated for CD/DVD drive can cause kernel to generate a lot of output
+on console, because
+.Nm
+polls a device every 2 seconds.
