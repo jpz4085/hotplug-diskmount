@@ -168,17 +168,20 @@ unlock_db(void)
 void
 prepare_disk_name(char *dskname, const char *packname)
 {
+	size_t packlen;
 	int i, j, st, sz;
 
+	packlen = strlen(packname);
+
 	/* Skip leading spaces */
-	for (i = 0; i < DISKNAME_SIZE - 1; i++) {
+	for (i = 0; i < packlen; i++) {
 		if (!isspace(packname[i]))
 			break;
 	}
 
 	/* Skip trailing spaces */
 	st = i;
-	for (i = DISKNAME_SIZE - 1; i > st; i--) {
+	for (i = packlen; i > st; i--) {
 		if (!isspace(packname[i - 1]) && packname[i - 1] != '\0')
 			break;
 	}
@@ -891,7 +894,7 @@ main(int argc, char * const *argv)
 	struct disklabel label;
 	const char *arg_cmd, *arg_devname;
 	const char *progname;
-	char diskname[DISKNAME_SIZE], *dev;
+	char packlabel[16], *dev;
 	struct passwd *pwent;
 	struct group *grent;
 	int succeed, error;
@@ -1111,8 +1114,8 @@ main(int argc, char * const *argv)
 				/* NOTHING */
 			} else if (error == 0) {
 				lock_db();
-				prepare_disk_name(diskname, label.d_packname);
-				mount_disk(arg_devname, dev, diskname, &label);
+				prepare_disk_name(packlabel, label.d_packname);
+				mount_disk(arg_devname, dev, packlabel, &label);
 				unlock_db();
 				free(dev);
 				succeed = 1;
