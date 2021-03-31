@@ -9,6 +9,15 @@ every 2 seconds.  It is useful to detect and mount correctly disks inserted into
 By default all mount points are created in the /media directory, which should have been created beforehand
 by the init command. The default directory can be changed with the -d option.
 
+Installing
+----------
+    $ make
+    $ doas make install
+    
+Uninstalling
+------------
+    $ doas make uninstall
+
 Changes
 -------
 - Added support for exfat-fuse in addition to ntfs3g
